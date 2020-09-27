@@ -5,7 +5,6 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import compartilhado.Mensagem;
 import compartilhado.Mensagem.Comandos;
-import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,6 +12,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -323,8 +324,9 @@ public class ChatFrame extends javax.swing.JFrame {
             this.mensagem.setComando(Comandos.ENVIA_ARQUIVO_PRIVADO);
             this.usuariosOnline.clearSelection();
         } else {
-            JOptionPane.showMessageDialog(this, "SELECIONE UM DESTINATÁRIO PARA O ARQUIVO", "Error Mensage", ERROR_MESSAGE);
-            return;
+            this.mensagem.setComando(Comandos.ENVIA_ARQUIVO_GERAL);
+            /*JOptionPane.showMessageDialog(this, "SELECIONE UM DESTINATÁRIO PARA O ARQUIVO", "Error Mensage", ERROR_MESSAGE);
+            return;*/
         }
 
         this.mensagem.setNomeUsuario(nomeUsuario);
@@ -409,8 +411,13 @@ public class ChatFrame extends javax.swing.JFrame {
                         case USUARIO_ONLINE:
                             atualizarListaOnline(msg);
                             break;
-                        case ENVIA_ARQUIVO_PRIVADO:
-                            receberArquivo(msg);
+                        case ENVIA_ARQUIVO_PRIVADO: {
+                            try {
+                                receberArquivo(msg);
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
                         default:
                             break;
                     }
@@ -481,7 +488,7 @@ public class ChatFrame extends javax.swing.JFrame {
 
     }
 
-    private void receberArquivo(Mensagem mensagem) {
+    private void receberArquivo(Mensagem mensagem) throws InterruptedException {
 
         areaChat.append("Você recebeu um arquivo de " + mensagem.getNomeUsuario() + " : " + mensagem.getFile().getName() + "\n");
 
@@ -496,15 +503,18 @@ public class ChatFrame extends javax.swing.JFrame {
 
     }
 
-    private void salvaArquivo(Mensagem mensagem) throws FileNotFoundException, IOException {
+    private void salvaArquivo(Mensagem mensagem) throws FileNotFoundException, IOException, InterruptedException {
+        long hora = System.currentTimeMillis();
+        Thread.sleep(1000);
 
         String path = "C:\\Users\\Tais Baierle\\Desktop\\Mensagens\\";
         File pathFile = new File(path);
         if (!pathFile.exists()) {
             pathFile.mkdirs();
         }
+
         FileInputStream fileInputStream = new FileInputStream(mensagem.getFile());
-        FileOutputStream fileOutputStream = new FileOutputStream(path + mensagem.getUsuarioMsgPrivada() + " - "
+        FileOutputStream fileOutputStream = new FileOutputStream(path + hora + " - "
                 + mensagem.getFile().getName());
 
         int size = fileInputStream.available();

@@ -78,7 +78,9 @@ public class ServicosServidor {
                             enviarPrivado(msg);
                             break;
                         case ENVIA_ARQUIVO_PRIVADO:
-                            enviaArquivo(msg, out);
+                            enviaArquivoPrivado(msg, out);
+                        case ENVIA_ARQUIVO_GERAL:
+                            enviarArquivoGeral(msg,out);
                         default:
                             break;
                     }
@@ -183,7 +185,7 @@ public class ServicosServidor {
 
         }
 
-        private void enviaArquivo(Mensagem msg, ObjectOutputStream out) throws IOException {
+        private void enviaArquivoPrivado(Mensagem msg, ObjectOutputStream out) throws IOException {
             //map.put(msg.getNomeUsuario(), out);
             if (msg.getFile() != null) {
                 for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
@@ -201,5 +203,18 @@ public class ServicosServidor {
 
         }
 
+        private void enviarArquivoGeral(Mensagem mensagem, ObjectOutputStream out) throws IOException {
+
+            if (mensagem.getFile() != null) {
+                for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
+                    if (!mensagem.getNomeUsuario().equals(key.getKey())) {
+
+                        mensagem.setComando(Comandos.ENVIA_ARQUIVO_PRIVADO);
+                        key.getValue().writeObject(mensagem);
+
+                    }
+                }
+            }
+        }
     }
 }
