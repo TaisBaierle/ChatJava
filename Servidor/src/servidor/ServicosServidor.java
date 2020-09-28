@@ -81,8 +81,10 @@ public class ServicosServidor {
                             break;
                         case ENVIA_ARQUIVO_PRIVADO:
                             enviaArquivoPrivado(msg, out);
+                            enviaListaConectados();
                         case ENVIA_ARQUIVO_GERAL:
                             enviarArquivoGeral(msg,out);
+                            enviaListaConectados();
                         default:
                             break;
                     }
