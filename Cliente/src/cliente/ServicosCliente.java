@@ -16,6 +16,8 @@ public class ServicosCliente {
         try {
             this.socket = new Socket("localhost", 5050);
             this.out = new ObjectOutputStream(socket.getOutputStream());
+            //Método conectar que instancia o socket no localhost e na porta 5050
+            //E o Objeto ObjectOutputStream que escreve e serializa
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -25,7 +27,7 @@ public class ServicosCliente {
 
     public void enviar(Mensagem mensagem) throws IOException {
         
-        out.writeObject(mensagem);
+        out.writeObject(mensagem);//Serializa o objeto mensagem para o que mesmo sejá enviado
     }
 
 }
