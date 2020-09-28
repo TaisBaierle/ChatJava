@@ -477,7 +477,7 @@ public class ChatFrame extends javax.swing.JFrame {
         //O desconectar faz  contrário, libera o campo de login e o botão
         //bloqueia as demais funcionalidades do chat
         entrar.setEnabled(true);
-        campoLogin.setEditable(true);
+        campoLogin.setEnabled(true);
 
         sair.setEnabled(false);
         areaMensagem.setEnabled(false);
@@ -487,6 +487,7 @@ public class ChatFrame extends javax.swing.JFrame {
         arquivo.setEnabled(false);
         areaChat.setText("");
         areaMensagem.setText("");
+        campoLogin.setText("");
 
         JOptionPane.showMessageDialog(this, "VOCE DEIXOU A SALA");
     }

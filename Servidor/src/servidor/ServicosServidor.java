@@ -73,9 +73,11 @@ public class ServicosServidor {
                             return;
                         case ENVIA_GERAL:
                             enviageral(msg);
+                            enviaListaConectados();
                             break;
                         case ENVIA_PRIVADO:
                             enviarPrivado(msg);
+                            enviaListaConectados();
                             break;
                         case ENVIA_ARQUIVO_PRIVADO:
                             enviaArquivoPrivado(msg, out);
