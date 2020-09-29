@@ -16,24 +16,24 @@ import static javax.swing.JOptionPane.ERROR_MESSAGE;
 
 public class ServicosServidor {
 
-    private ServerSocket serverSocket;// atributo da classe, responsável por esperar as conexões com o cliente
-    private Socket socket;//Que envia as respostas para o cliente
-    private Map<String, ObjectOutputStream> map = new HashMap<>();//Map que lista os usuários por chave, valor
+    private ServerSocket serverSocket;
+    private Socket socket;
+    private Map<String, ObjectOutputStream> map = new HashMap<>();
 
     public ServicosServidor() {
 
         try {
-            serverSocket = new ServerSocket(5050);//Instancia do serverSocket na porta 5050
+            serverSocket = new ServerSocket(5050);
 
             System.out.println("SERVER RUNNING!!");
 
             while (true) {
-                socket = serverSocket.accept();//Ouvinte de conexões
+                socket = serverSocket.accept();
 
-                new Thread(new AguardaSocket(socket)).start();//Dispara as threads que vão executar os comportamentos
+                new Thread(new AguardaSocket(socket)).start();
             }
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(null,"ERRO AO EXECUTAR O SERVIDOR","ERRO MESSAGE",ERROR_MESSAGE );
+            JOptionPane.showMessageDialog(null,"ERRO AO INICIAR O SERVIDOR", "ERROR MESSAGE", ERROR_MESSAGE);
         }
     }
 
@@ -44,7 +44,6 @@ public class ServicosServidor {
 
         AguardaSocket(Socket socket) {
             try {
-                //Passado o socket via construtor, utilizando para instanciar os objetos responsaveis por ler e escrever
                 this.out = new ObjectOutputStream(socket.getOutputStream());
                 this.in = new ObjectInputStream(socket.getInputStream());
 
@@ -55,41 +54,35 @@ public class ServicosServidor {
 
         @Override
         public void run() {
-            Mensagem msg = null;//instancia de Mensage
+            Mensagem msg = null;
 
             try {
                 while ((msg = (Mensagem) in.readObject()) != null) {
-                    //Fazendo a leitura do ObjectinputStream, continua no while enquanto não for vazio
 
-                    Comandos comandos = msg.getComando();//Pega o comando vindo junto com a mensagem mandada pelo cliente
+                    Comandos comandos = msg.getComando();
 
-                    switch (comandos) {//switch casa para chamar os metodos de acordo com a resposta do cliente
+                    switch (comandos) {
                         case CONECTADO:
-                            boolean statusConexao = conectar(msg, out);//retorna um boolean verdadeiro ou falso
-                            //Conforme a resposta da conexão
+                            boolean statusConexao = conectar(msg, out);
                             if (statusConexao) {
-                                map.put(msg.getNomeUsuario(), out);//se a conexão for feita, adiciona o user ao map
-                                enviaListaConectados();//atualza a lista de conectados
+                                map.put(msg.getNomeUsuario(), out);
+                                enviaListaConectados();
                             }
                             break;
                         case DESCONECTADO:
-                            desconectar(msg, out);//Desconecta o user do servidor
-                            enviaListaConectados();//Atualiza a lista
+                            desconectar(msg, out);
+                            enviaListaConectados();
                             return;
                         case ENVIA_GERAL:
-                            enviageral(msg);//Envia as mensagens em broadcast
-                            enviaListaConectados();//atualiza a lista de conectados
+                            enviageral(msg);
                             break;
                         case ENVIA_PRIVADO:
-                            enviarPrivado(msg);//Envia as mensagem privadas
-                            enviaListaConectados();//Atualiza a lista de conectados
+                            enviarPrivado(msg);
                             break;
                         case ENVIA_ARQUIVO_PRIVADO:
-                            enviaArquivoPrivado(msg, out);//envia arquivos de forma privada
-                            //enviaListaConectados();//Atualiza a lista de conectados
+                            enviaArquivoPrivado(msg, out);
                         case ENVIA_ARQUIVO_GERAL:
-                            enviarArquivoGeral(msg, out);//envia arquivos em broadcast
-                            //enviaListaConectados();////Atualiza a lista de conectados
+                            enviarArquivoGeral(msg,out);
                         default:
                             break;
                     }
@@ -100,7 +93,6 @@ public class ServicosServidor {
                 m.setNomeUsuario(msg.getNomeUsuario());
                 desconectar(m, out);
                 enviaListaConectados();
-                /*Caso caia nas exceptions, vai desconectar e enviar a lista de conectados*/
 
                 //System.out.println(msg.getNomeUsuario() + " Saiu do chat");
             }
@@ -108,36 +100,32 @@ public class ServicosServidor {
 
         private boolean conectar(Mensagem mensagem, ObjectOutputStream out) throws IOException {
 
-            if (map.isEmpty()) {//Se for o primeir cliente a se conectar
-                mensagem.setTextoMensagem("CONECTOU");//manda a mensagem de CONECTOU
-                enviarConexao(mensagem, out);//chama o método de conexão, 
-                //é como um envio de mensagem, mas serve para se estabelecer conexão
-                return true;//retorna true, pois a conexão ocorreu
+            if (map.isEmpty()) {
+                mensagem.setTextoMensagem("CONECTOU");
+                enviarConexao(mensagem, out);
+                return true;
             }
 
-            if (map.containsKey(mensagem.getNomeUsuario())) {//Busca na lista de users online
-                //Se o nome já não existe, se existe, envia a mensagem que não se conectou
+            if (map.containsKey(mensagem.getNomeUsuario())) {
                 mensagem.setTextoMensagem("NÃO CONECTOU");
                 enviarConexao(mensagem, out);
-                return false;//retorna falso
-                //Esse trecho de código garante que não tenham dois user com o mesmo login
+                return false;
             } else {
                 mensagem.setTextoMensagem("CONECTOU");
                 enviarConexao(mensagem, out);
                 return true;
-                //caso não seja igual, envia a mensagem CONECTOU e retorna true
             }
 
         }
 
         private void desconectar(Mensagem mensagem, ObjectOutputStream out) {
-            map.remove(mensagem.getNomeUsuario());//AO DESCONECTAR O REMOVE DA FILA O USUÁRIO
+            map.remove(mensagem.getNomeUsuario());
 
-            mensagem.setTextoMensagem("saiu");//Envia a mensagem que saiu
+            mensagem.setTextoMensagem("saiu");
 
-            mensagem.setComando(Comandos.ENVIA_PRIVADO);//seta o comando envia privado
+            mensagem.setComando(Comandos.ENVIA_PRIVADO);
 
-            enviageral(mensagem);//depois faz o envio geral
+            enviageral(mensagem);
 
             // System.out.println(mensagem.getNomeUsuario() + " saiu do chat.");
         }
@@ -147,10 +135,7 @@ public class ServicosServidor {
             for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
                 if (key.getKey().equals(mensagem.getUsuarioMsgPrivada())) {
 
-                    key.getValue().writeObject(mensagem);//pega o valor e envia
-                    /*Busca na lista de usuários o nome do destinatário da mensagem privada
-                    se encontra dentro do objeto mensagem */
- /*O map contém chava: NOME DO USER, VALOR: OBJECTOUTPUTSTREAM, que vai fazer a escrita dos dados*/
+                    key.getValue().writeObject(mensagem);
 
                 }
 
@@ -158,20 +143,17 @@ public class ServicosServidor {
         }
 
         private void enviarConexao(Mensagem mensagem, ObjectOutputStream out) throws IOException {
-            out.writeObject(mensagem);//O enviar conexão, so envia uma mensagem de conexão
+            out.writeObject(mensagem);
         }
 
         private void enviageral(Mensagem mensagem) {
-            /*Implementa o mesmo comportamento do envio privado, mas ao invés de ter a restrição
-            de enviar somente para a pessoa destinatário, ele faz o laço enviando para todos os 
-            clientes, e somente exclui si mesmo*/
 
             for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
                 if (!key.getKey().equals(mensagem.getNomeUsuario())) {
-                    mensagem.setComando(Comandos.ENVIA_PRIVADO);//manda um envio privado por que o envio broadcast é um envio privado para cada um
+                    mensagem.setComando(Comandos.ENVIA_PRIVADO);
                     try {
                         //System.out.println(mensagem.getNomeUsuario());
-                        key.getValue().writeObject(mensagem);//envia a mensagem
+                        key.getValue().writeObject(mensagem);
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
@@ -182,24 +164,21 @@ public class ServicosServidor {
         }
 
         private void enviaListaConectados() {
-            Set<String> listaNomes = new HashSet<>();//Cria uma lista do tipo Set
+            Set<String> listaNomes = new HashSet<>();
 
             for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
                 listaNomes.add(key.getKey());
-                //Faz uma busca no Map, e adiciona as chaves na lista, lembrando que as 
-                //chaves são os nomes dos users
             }
 
-            Mensagem mensagem = new Mensagem();//Cria um objeto Mensagem
-            mensagem.setComando(Comandos.USUARIO_ONLINE);//seta o comando USUARIO_ONLINE
-            mensagem.setUsuariosOnline(listaNomes);//seta a lista de nomes gerados pelo servidor
+            Mensagem mensagem = new Mensagem();
+            mensagem.setComando(Comandos.USUARIO_ONLINE);
+            mensagem.setUsuariosOnline(listaNomes);
 
             for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
-                //Pega os nomes de usuários, que são as chaves dos Map
                 mensagem.setNomeUsuario(key.getKey());
                 try {
                     //System.out.println(key.getKey());
-                    key.getValue().writeObject(mensagem);//envio do objeto carregando a lista de users
+                    key.getValue().writeObject(mensagem);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -209,38 +188,35 @@ public class ServicosServidor {
         }
 
         private void enviaArquivoPrivado(Mensagem msg, ObjectOutputStream out) throws IOException {
-            // map.put(msg.getNomeUsuario(), out);
-            if (msg.getFile() != null) {
+            //map.put(msg.getNomeUsuario(), out);
+            if (msg.getFile() != null && msg.getUsuarioMsgPrivada() != null) {
                 for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
-                    if (key.getKey().equals(msg.getUsuarioMsgPrivada())) {
+                    if (!msg.getNomeUsuario().equals(key.getKey())) {
+                        if (key.getKey().equals(msg.getUsuarioMsgPrivada())) {
+                            msg.setComando(Comandos.ENVIA_ARQUIVO_PRIVADO);
+                            key.getValue().writeObject(msg);
 
-                        key.getValue().writeObject(msg);
-
-                        /*Mesma lógica do envio de mensagem privada, mas a difereça é que
-                            só será executado quando a mensagem carregar um arquivo*/
+                        }
                     }
+
                 }
 
             }
 
         }
 
-    }
+        private void enviarArquivoGeral(Mensagem mensagem, ObjectOutputStream out) throws IOException {
 
-    private void enviarArquivoGeral(Mensagem mensagem, ObjectOutputStream out) throws IOException {
+            if (mensagem.getFile() != null && mensagem.getUsuarioMsgPrivada() == null) {
+                for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
+                    if (!mensagem.getNomeUsuario().equals(key.getKey())) {
 
-        if (mensagem.getFile() != null) {
-            for (Map.Entry<String, ObjectOutputStream> key : map.entrySet()) {
-                if (!mensagem.getNomeUsuario().equals(key.getKey())) {
+                        mensagem.setComando(Comandos.ENVIA_ARQUIVO_PRIVADO);
+                        key.getValue().writeObject(mensagem);
 
-                    mensagem.setComando(Comandos.ENVIA_ARQUIVO_PRIVADO);
-                    key.getValue().writeObject(mensagem);
-                    /*Mesma lógica do envio geral, mas somente executa se a mensagem carregar
-                        um arquivo*/
-
+                    }
                 }
             }
         }
     }
 }
-
