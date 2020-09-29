@@ -298,7 +298,6 @@ public class ChatFrame extends javax.swing.JFrame {
             this.mensagem.setUsuarioMsgPrivada((String) this.usuariosOnline.getSelectedValue());//como o ato de selecionar alguém na
             //lista, siginifica o envio como mensagem privada, o nome selecionado é setado no atributo UsuarioMsgPrivada da classe Mensagem
             this.mensagem.setComando(Comandos.ENVIA_PRIVADO);//Envia o comando de ENVIA_PRIVADO
-            this.usuariosOnline.clearSelection();//Limpa a seleção na lista
 
         } else {
             this.mensagem.setComando(Comandos.ENVIA_GERAL);//caso o valor de retorno seja -1, o envio é geral
@@ -321,11 +320,11 @@ public class ChatFrame extends javax.swing.JFrame {
                 ex.printStackTrace();
             }
         }
-        this.areaMensagem.setText("");//Limpa a área de mensagem para ser digitada a proxima
+        this.usuariosOnline.clearSelection();
     }//GEN-LAST:event_enviarActionPerformed
 
     private void arquivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_arquivoActionPerformed
-        String nomeUsuario = this.campoLogin.getText();//Pega o nome do usuário do campo de login
+        String nomeUsuario = this.mensagem.getNomeUsuario();//Pega o nome do usuário do campo de login
         this.mensagem = new Mensagem();//instancia um novo objeto de mensagem no atributo da classe
 
         if (this.usuariosOnline.getSelectedIndex() > -1) {
@@ -427,10 +426,17 @@ public class ChatFrame extends javax.swing.JFrame {
                             atualizarListaOnline(msg);
                             //Se o comando for usuarios_online, será o chamado o método responsável por isso
                             break;
+                        case ENVIA_ARQUIVO_GERAL: {
+                            try {
+                                receberArquivo(msg);
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
                         case ENVIA_ARQUIVO_PRIVADO: {
                             //Se o comando for envia_arquivo_privado, será o chamado o método responsável por isso
                             try {
-                                receberArquivo(msg);
+                                receberArquivoPrivado(msg);
                             } catch (InterruptedException ex) {
                                 ex.printStackTrace();
                             }
@@ -495,55 +501,78 @@ public class ChatFrame extends javax.swing.JFrame {
     private void receberPrivado(Mensagem mensagem) throws IOException {
 
         areaChat.append(mensagem.getNomeUsuario() + ":  " + mensagem.getTextoMensagem() + "\n");
+        /*Faz a impressão na area de chat do envio privado*/
 
     }
 
     private void atualizarListaOnline(Mensagem mensagem) {
         //System.out.println(mensagem.getUsuariosOnline().toString());
         Set<String> nomesConectados = mensagem.getUsuariosOnline();
-        nomesConectados.remove((String) mensagem.getNomeUsuario());
+        nomesConectados.remove((String) mensagem.getNomeUsuario());//Remove da lista o nome do proprio usuário, para que na lista online 
+        //não fique aparecendo si mesmo
         String[] vetorNomes = (String[]) nomesConectados.toArray(new String[nomesConectados.size()]);
 
         usuariosOnline.setListData(vetorNomes);
         usuariosOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         usuariosOnline.setLayoutOrientation(JList.VERTICAL);
+        /*Recupera o objeto enviado do servidor contendo a lista de usuários
+        online e seta alguns comportamentos do JList*/
 
     }
 
     private void receberArquivo(Mensagem mensagem) throws InterruptedException {
 
         areaChat.append("Você recebeu um arquivo de " + mensagem.getNomeUsuario() + " : " + mensagem.getFile().getName() + "\n");
+        //seta na area de texto o envio da mensagem de arquivo
 
         try {
-            salvaArquivo(mensagem);
+            salvaArquivo(mensagem);//chama o método de salvar em disco o arquivo recebido pelo cliente
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {
             ex.printStackTrace();
 
         }
+    }
+
+    private void receberArquivoPrivado(Mensagem mensagem) throws InterruptedException {
+        if (mensagem.getUsuarioMsgPrivada() != null) {
+            areaChat.append("Você recebeu um arquivo de " + mensagem.getNomeUsuario() + " : " + mensagem.getFile().getName() + "\n");
+            //seta na area de texto o envio da mensagem de arquivo
+
+            try {
+                salvaArquivo(mensagem);//chama o método de salvar em disco o arquivo recebido pelo cliente
+            } catch (FileNotFoundException ex) {
+                ex.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+
+            }
+        }
 
     }
 
     private void salvaArquivo(Mensagem mensagem) throws FileNotFoundException, IOException, InterruptedException {
-        long hora = System.currentTimeMillis();
-        Thread.sleep(1000);
-
-        String path = "C:\\Users\\Tais Baierle\\Desktop\\Mensagens\\";
+        long hora = System.currentTimeMillis();//pega a hora atual
+        Thread.sleep(1000);//implementa o sleep de 1s
+        /*Isso se deve ao fato de que como todas as imagens estão sendo salvas no mesmo diretorio, se duas imagens iguais
+        forem enviadas ao mesmo tempo para diferentes clientes, vai substituir o arquivo, agora concatenando a hora atual e
+        implementando um sleep, gera nomes diferentes para os arquivos*/
+        String path = "C:\\Users\\Tais Baierle\\Desktop\\Mensagens\\";//diretorio das mensagens
         File pathFile = new File(path);
         if (!pathFile.exists()) {
-            pathFile.mkdirs();
+            pathFile.mkdirs();//caso nao existe o diretorio, ele cria
         }
 
         FileInputStream fileInputStream = new FileInputStream(mensagem.getFile());
         FileOutputStream fileOutputStream = new FileOutputStream(path + hora + " - "
                 + mensagem.getFile().getName());
+        /*Utilixa o FileInputStream e FileOutoutStream para pegar a salvar o arquivo*/
+        int size = fileInputStream.available();//pega o tamanho de saida como int
+        byte[] arquivoBytes = new byte[size];//cria um vetor de bytes
+        fileInputStream.read(arquivoBytes);//recupera o arquvo no vetor de bytes
 
-        int size = fileInputStream.available();
-        byte[] arquivoBytes = new byte[size];
-        fileInputStream.read(arquivoBytes);
-
-        fileOutputStream.write(arquivoBytes);
+        fileOutputStream.write(arquivoBytes);//escreve o arquivo em disco a partir do vetor de bytes
 
     }
 
